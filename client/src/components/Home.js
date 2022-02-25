@@ -63,9 +63,8 @@ const Home = ({ user, logout }) => {
   };
 
   const postMessage = (body) => {
-    try {
-      const data = saveMessage(body);
-
+    saveMessage(body)
+    .then(data => {
       if (!body.conversationId) {
         addNewConvo(body.recipientId, data.message);
       } else {
@@ -73,9 +72,10 @@ const Home = ({ user, logout }) => {
       }
 
       sendMessage(data, body);
-    } catch (error) {
+    })
+    .catch(error => {
       console.error(error);
-    }
+    });
   };
 
   const addNewConvo = useCallback(
@@ -105,14 +105,17 @@ const Home = ({ user, logout }) => {
         newConvo.latestMessageText = message.text;
         setConversations((prev) => [newConvo, ...prev]);
       }
-
-      conversations.forEach((convo) => {
+      conversations.forEach((convo, index) => {
         if (convo.id === message.conversationId) {
-          convo.messages.push(message);
-          convo.latestMessageText = message.text;
+
+          setConversations(prev => {
+            const newConversations = [...prev];
+            newConversations[index].messages.push(message);
+            newConversations[index].latestMessageText = message.text;
+            return newConversations;
+          });
         }
       });
-      setConversations(conversations);
     },
     [setConversations, conversations],
   );
@@ -164,7 +167,7 @@ const Home = ({ user, logout }) => {
       socket.off("remove-offline-user", removeOfflineUser);
       socket.off("new-message", addMessageToConversation);
     };
-  }, [addMessageToConversation, addOnlineUser, removeOfflineUser, socket]);
+  }, [addMessageToConversation, addOnlineUser, removeOfflineUser, socket, conversations]);
 
   useEffect(() => {
     // when fetching, prevent redirect
