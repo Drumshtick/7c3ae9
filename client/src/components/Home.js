@@ -80,14 +80,21 @@ const Home = ({ user, logout }) => {
 
   const addNewConvo = useCallback(
     (recipientId, message) => {
-      conversations.forEach((convo) => {
+      conversations.forEach((convo, index) => {
         if (convo.otherUser.id === recipientId) {
-          convo.messages.push(message);
-          convo.latestMessageText = message.text;
-          convo.id = message.conversationId;
+          setConversations(prev => {
+            const newConversations = [...prev];
+            newConversations[index].messages.push(message);
+            newConversations[index].latestMessageText = message.text;
+            newConversations[index].id = message.conversationId;
+            return newConversations;
+          });
+          // convo.messages.push(message);
+          // convo.latestMessageText = message.text;
+          // convo.id = message.conversationId;
         }
       });
-      setConversations(conversations);
+      // setConversations(conversations);
     },
     [setConversations, conversations],
   );
