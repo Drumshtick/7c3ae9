@@ -82,6 +82,7 @@ const Home = ({ user, logout }) => {
     (recipientId, message) => {
       conversations.forEach((convo, index) => {
         if (convo.otherUser.id === recipientId) {
+          
           setConversations(prev => {
             const newConversations = [...prev];
             newConversations[index].messages.push(message);
@@ -89,12 +90,8 @@ const Home = ({ user, logout }) => {
             newConversations[index].id = message.conversationId;
             return newConversations;
           });
-          // convo.messages.push(message);
-          // convo.latestMessageText = message.text;
-          // convo.id = message.conversationId;
         }
       });
-      // setConversations(conversations);
     },
     [setConversations, conversations],
   );
