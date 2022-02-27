@@ -196,10 +196,12 @@ const Home = ({ user, logout }) => {
       try {
         const { data } = await axios.get("/api/conversations");
         data.forEach(convo => {
+          convo.unreadMsgCount = calculateUnreadMsgCount(convo);
           convo.messages.sort((a, b) => {
             return Date.parse(a.createdAt) - Date.parse(b.createdAt);
           });
         });
+        console.log(data)
         setConversations(data);
       } catch (error) {
         console.error(error);
@@ -209,6 +211,23 @@ const Home = ({ user, logout }) => {
       fetchConversations();
     }
   }, [user]);
+
+  const calculateUnreadMsgCount = (convo) => {
+    const { lastViewed, otherUser } = convo;
+    if (!lastViewed) {
+      return convo.messages.length;
+    }
+    let unreadMsgCount = 0;
+    convo.messages.forEach(msg => {
+      if (
+        msg.senderId ===  otherUser.id &&
+        Date.parse(msg.createdAt) < Date.parse(lastViewed)
+        ) {
+        unreadMsgCount++;
+      }
+    });
+    return unreadMsgCount;
+  };
 
   const handleLogout = async () => {
     if (user && user.id) {
