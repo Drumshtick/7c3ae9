@@ -190,6 +190,11 @@ const Home = ({ user, logout }) => {
     const fetchConversations = async () => {
       try {
         const { data } = await axios.get("/api/conversations");
+        data.forEach(convo => {
+          convo.messages.sort((a, b) => {
+            return Date.parse(a.createdAt) - Date.parse(b.createdAt);
+          });
+        });
         setConversations(data);
       } catch (error) {
         console.error(error);
