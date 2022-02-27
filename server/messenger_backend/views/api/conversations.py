@@ -37,7 +37,7 @@ class Conversations(APIView):
                 convo_dict = {
                     "id": convo.id,
                     "messages": [
-                        message.to_dict(["id", "text", "senderId", "createdAt", "isUnread"])
+                        message.to_dict(["id", "text", "senderId", "createdAt"])
                         for message in convo.messages.all()
                     ],
                 }
