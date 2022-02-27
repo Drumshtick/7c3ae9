@@ -21,7 +21,7 @@ const Home = ({ user, logout }) => {
 
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
-
+  
   const classes = useStyles();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -62,9 +62,10 @@ const Home = ({ user, logout }) => {
     });
   };
 
-  const postMessage = (body) => {
-    saveMessage(body)
-    .then(data => {
+  const postMessage = async (body) => {
+    try {
+      const data = await saveMessage(body);
+
       if (!body.conversationId) {
         addNewConvo(body.recipientId, data.message);
       } else {
@@ -72,26 +73,27 @@ const Home = ({ user, logout }) => {
       }
 
       sendMessage(data, body);
-    })
-    .catch(error => {
+    } catch (error) {
       console.error(error);
-    });
+    }
   };
 
   const addNewConvo = useCallback(
     (recipientId, message) => {
-      conversations.forEach((convo, index) => {
+      const newConversations = [];
+      conversations.forEach(convo => {
         if (convo.otherUser.id === recipientId) {
-          
-          setConversations(prev => {
-            const newConversations = [...prev];
-            newConversations[index].messages.push(message);
-            newConversations[index].latestMessageText = message.text;
-            newConversations[index].id = message.conversationId;
-            return newConversations;
+          newConversations.push({
+            id: message.conversationId,
+            otherUser: convo.otherUser,
+            messages: [...convo.messages, message],
+            latestMessageTextL: message.text
           });
+        } else {
+          newConversations.push(convo)
         }
       });
+      setConversations(newConversations);
     },
     [setConversations, conversations],
   );
@@ -109,17 +111,20 @@ const Home = ({ user, logout }) => {
         newConvo.latestMessageText = message.text;
         setConversations((prev) => [newConvo, ...prev]);
       }
-      conversations.forEach((convo, index) => {
+      const newConversations = [];
+      conversations.forEach(convo => {
         if (convo.id === message.conversationId) {
-
-          setConversations(prev => {
-            const newConversations = [...prev];
-            newConversations[index].messages.push(message);
-            newConversations[index].latestMessageText = message.text;
-            return newConversations;
+          newConversations.push({
+            id: message.conversationId,
+            otherUser: convo.otherUser,
+            messages: [...convo.messages, message],
+            latestMessageTextL: message.text
           });
+        } else {
+          newConversations.push(convo)
         }
       });
+      setConversations(newConversations);
     },
     [setConversations, conversations],
   );
@@ -171,7 +176,7 @@ const Home = ({ user, logout }) => {
       socket.off("remove-offline-user", removeOfflineUser);
       socket.off("new-message", addMessageToConversation);
     };
-  }, [addMessageToConversation, addOnlineUser, removeOfflineUser, socket, conversations]);
+  }, [addMessageToConversation, addOnlineUser, removeOfflineUser, socket]);
 
   useEffect(() => {
     // when fetching, prevent redirect
@@ -190,7 +195,11 @@ const Home = ({ user, logout }) => {
     const fetchConversations = async () => {
       try {
         const { data } = await axios.get("/api/conversations");
-        console.log(data)
+        data.forEach(convo => {
+          convo.messages.sort((a, b) => {
+            return Date.parse(a.createdAt) - Date.parse(b.createdAt);
+          });
+        });
         setConversations(data);
       } catch (error) {
         console.error(error);
