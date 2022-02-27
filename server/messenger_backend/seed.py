@@ -1,5 +1,6 @@
 from django.db import migrations
 from messenger_backend.models import User, Conversation, Message
+from django.utils import timezone
 
 
 def seed():
@@ -26,7 +27,7 @@ def seed():
 
     santiago.save()
 
-    santiagoConvo = Conversation(user1=thomas, user2=santiago)
+    santiagoConvo = Conversation(user1=thomas, user2=santiago, user2LastViewed=timezone.now(), user1LastViewed=timezone.now())
     santiagoConvo.save()
 
     messages = Message(
@@ -54,7 +55,7 @@ def seed():
     )
     chiumbo.save()
 
-    chiumboConvo = Conversation(user1=chiumbo, user2=thomas)
+    chiumboConvo = Conversation(user1=chiumbo, user2=thomas, user1LastViewed=timezone.now())
     chiumboConvo.save()
 
     messages = Message(
@@ -70,7 +71,7 @@ def seed():
     )
     hualing.save()
 
-    hualingConvo = Conversation(user1=hualing, user2=thomas)
+    hualingConvo = Conversation(user1=hualing, user2=thomas, user1LastViewed=timezone.now())
     hualingConvo.save()
 
     for i in range(10):

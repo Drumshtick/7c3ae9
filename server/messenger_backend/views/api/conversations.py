@@ -49,8 +49,10 @@ class Conversations(APIView):
                 user_fields = ["id", "username", "photoUrl"]
                 if convo.user1 and convo.user1.id != user_id:
                     convo_dict["otherUser"] = convo.user1.to_dict(user_fields)
+                    convo_dict["lastViewed"] = convo.user2LastViewed
                 elif convo.user2 and convo.user2.id != user_id:
                     convo_dict["otherUser"] = convo.user2.to_dict(user_fields)
+                    convo_dict["lastViewed"] = convo.user1LastViewed
 
                 # set property for online status of the other user
                 if convo_dict["otherUser"]["id"] in online_users:
