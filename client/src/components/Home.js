@@ -62,9 +62,10 @@ const Home = ({ user, logout }) => {
     });
   };
 
-  const postMessage = (body) => {
-    saveMessage(body)
-    .then(data => {
+  const postMessage = async (body) => {
+    try {
+      const data = await saveMessage(body);
+
       if (!body.conversationId) {
         addNewConvo(body.recipientId, data.message);
       } else {
@@ -72,10 +73,9 @@ const Home = ({ user, logout }) => {
       }
 
       sendMessage(data, body);
-    })
-    .catch(error => {
+    } catch (error) {
       console.error(error);
-    });
+    }
   };
 
   const addNewConvo = useCallback(
