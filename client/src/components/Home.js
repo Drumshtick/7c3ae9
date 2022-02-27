@@ -171,7 +171,7 @@ const Home = ({ user, logout }) => {
       socket.off("remove-offline-user", removeOfflineUser);
       socket.off("new-message", addMessageToConversation);
     };
-  }, [addMessageToConversation, addOnlineUser, removeOfflineUser, socket, conversations]);
+  }, [addMessageToConversation, addOnlineUser, removeOfflineUser, socket]);
 
   useEffect(() => {
     // when fetching, prevent redirect
