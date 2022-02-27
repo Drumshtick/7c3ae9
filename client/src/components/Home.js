@@ -21,7 +21,7 @@ const Home = ({ user, logout }) => {
 
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
-
+  
   const classes = useStyles();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -80,18 +80,20 @@ const Home = ({ user, logout }) => {
 
   const addNewConvo = useCallback(
     (recipientId, message) => {
-      conversations.forEach((convo, index) => {
+      const newConversations = [];
+      conversations.forEach(convo => {
         if (convo.otherUser.id === recipientId) {
-          
-          setConversations(prev => {
-            const newConversations = [...prev];
-            newConversations[index].messages.push(message);
-            newConversations[index].latestMessageText = message.text;
-            newConversations[index].id = message.conversationId;
-            return newConversations;
+          newConversations.push({
+            id: message.conversationId,
+            otherUser: convo.otherUser,
+            messages: [...convo.messages, message],
+            latestMessageTextL: message.text
           });
+        } else {
+          newConversations.push(convo)
         }
       });
+      setConversations(newConversations);
     },
     [setConversations, conversations],
   );
@@ -109,17 +111,20 @@ const Home = ({ user, logout }) => {
         newConvo.latestMessageText = message.text;
         setConversations((prev) => [newConvo, ...prev]);
       }
-      conversations.forEach((convo, index) => {
+      const newConversations = [];
+      conversations.forEach(convo => {
         if (convo.id === message.conversationId) {
-
-          setConversations(prev => {
-            const newConversations = [...prev];
-            newConversations[index].messages.push(message);
-            newConversations[index].latestMessageText = message.text;
-            return newConversations;
+          newConversations.push({
+            id: message.conversationId,
+            otherUser: convo.otherUser,
+            messages: [...convo.messages, message],
+            latestMessageTextL: message.text
           });
+        } else {
+          newConversations.push(convo)
         }
       });
+      setConversations(newConversations);
     },
     [setConversations, conversations],
   );
