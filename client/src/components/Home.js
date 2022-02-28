@@ -134,13 +134,27 @@ const Home = ({ user, logout }) => {
       const currentConvo = conversations.find(convo => {
         return convo.otherUser.username === username;
       });
-      axios.put("api/conversations", {
+      const { data } = await axios.put("api/conversations", {
         otherUser: currentConvo.otherUser
       });
+      const newConversations = [];
+      conversations.forEach(convo => {
+        if (convo.id === currentConvo.id) {
+          newConversations.push({
+            ...convo,
+            lastViewed: data.lastViewed,
+            messages: [...convo.messages],
+            otherUser: {...convo.otherUser},
+            unreadMsgCount: 0
+          });
+        } else {
+          newConversations.push(convo);
+        }
+      });
+      setConversations(newConversations);
     } catch(error) {
       console.error(error)
     }
-
   }
 
   const setActiveChat = (username) => {
