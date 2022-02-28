@@ -72,19 +72,21 @@ class Conversations(APIView):
             )
         except Exception as e:
             return HttpResponse(status=500)
+            
     def put(self, request: Request):
       try:
         user = get_user(request)
+
         if user.is_anonymous:
             return HttpResponse(status=401)
+
         body = request.data
         user_id = user.id
-        print("otherUser %s"% body["otherUser"]["username"])
-        print("logged in user %s"% user.username)
+
         conversation = (
           Conversation.find_conversation(body["otherUser"]["id"], user_id)
         )
-        print("conversation: %s"% conversation.user1.username)
+
         if conversation.user1.id == user_id:
           conversation.user1LastViewed = timezone.now()
           conversation.save(update_fields=["user1LastViewed"])
