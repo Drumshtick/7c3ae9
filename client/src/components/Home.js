@@ -129,7 +129,22 @@ const Home = ({ user, logout }) => {
     [setConversations, conversations],
   );
 
+  const setLastViewedOfConvo = async (username) => {
+    try {
+      const currentConvo = conversations.find(convo => {
+        return convo.otherUser.username === username;
+      });
+      axios.put("api/conversations", {
+        otherUser: currentConvo.otherUser
+      });
+    } catch(error) {
+      console.error(error)
+    }
+
+  }
+
   const setActiveChat = (username) => {
+    setLastViewedOfConvo(username);
     setActiveConversation(username);
   };
 
@@ -221,7 +236,7 @@ const Home = ({ user, logout }) => {
     convo.messages.forEach(msg => {
       if (
         msg.senderId ===  otherUser.id &&
-        Date.parse(msg.createdAt) < Date.parse(lastViewed)
+        Date.parse(msg.createdAt) > Date.parse(lastViewed)
         ) {
         unreadMsgCount++;
       }
