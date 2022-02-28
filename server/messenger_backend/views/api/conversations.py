@@ -2,11 +2,12 @@ from django.contrib.auth.middleware import get_user
 from django.db.models import Max, Q
 from django.db.models.query import Prefetch
 from django.http import HttpResponse, JsonResponse
+from pytz import timezone
 from messenger_backend.models import Conversation, Message
 from online_users import online_users
 from rest_framework.views import APIView
 from rest_framework.request import Request
-
+from django.utils import timezone
 
 class Conversations(APIView):
     """get all conversations for a user, include latest message text for preview, and all messages
@@ -71,3 +72,26 @@ class Conversations(APIView):
             )
         except Exception as e:
             return HttpResponse(status=500)
+    def put(self, request: Request):
+      try:
+        user = get_user(request)
+        if user.is_anonymous:
+            return HttpResponse(status=401)
+        body = request.data
+        user_id = user.id
+        print("otherUser %s"% body["otherUser"]["username"])
+        print("logged in user %s"% user.username)
+        conversation = (
+          Conversation.find_conversation(body["otherUser"]["id"], user_id)
+        )
+        print("conversation: %s"% conversation.user1.username)
+        if conversation.user1.id == user_id:
+          conversation.user1LastViewed = timezone.now()
+          conversation.save(update_fields=["user1LastViewed"])
+        else:
+          conversation.user2LastViewed = timezone.now()
+          conversation.save(update_fields=["user2LastViewed"])
+        return HttpResponse(status=204)
+      except Exception as e:
+        print(e)
+        return HttpResponse(status=500)
