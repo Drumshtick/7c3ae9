@@ -86,14 +86,18 @@ class Conversations(APIView):
         conversation = (
           Conversation.find_conversation(body["otherUser"]["id"], user_id)
         )
-
         if conversation.user1.id == user_id:
-          conversation.user1LastViewed = timezone.now()
+          lastViewed = timezone.now()
+          conversation.user1LastViewed = lastViewed
           conversation.save(update_fields=["user1LastViewed"])
         else:
-          conversation.user2LastViewed = timezone.now()
+          lastViewed = timezone.now()
+          conversation.user2LastViewed = lastViewed
           conversation.save(update_fields=["user2LastViewed"])
-        return HttpResponse(204)
+        return JsonResponse(
+          {"lastViewed": lastViewed},
+          safe=False
+        )
       except Exception as e:
         print(e)
         return HttpResponse(status=500)
