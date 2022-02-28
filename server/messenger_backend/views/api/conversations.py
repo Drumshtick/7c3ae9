@@ -93,7 +93,7 @@ class Conversations(APIView):
         else:
           conversation.user2LastViewed = timezone.now()
           conversation.save(update_fields=["user2LastViewed"])
-        return HttpResponse(status=204)
+        return HttpResponse(204)
       except Exception as e:
         print(e)
         return HttpResponse(status=500)
