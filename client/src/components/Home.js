@@ -65,9 +65,8 @@ const Home = ({ user, logout }) => {
   const postMessage = async (body) => {
     try {
       const data = await saveMessage(body);
-
       if (!body.conversationId) {
-        addNewConvo(body.recipientId, data.message);
+        addNewConvo(body.recipientId, data.message, data.lastViewed);
       } else {
         addMessageToConversation(data);
       }
@@ -79,7 +78,7 @@ const Home = ({ user, logout }) => {
   };
 
   const addNewConvo = useCallback(
-    (recipientId, message) => {
+    (recipientId, message, lastViewed) => {
       const newConversations = [];
       conversations.forEach(convo => {
         if (convo.otherUser.id === recipientId) {
@@ -87,7 +86,8 @@ const Home = ({ user, logout }) => {
             id: message.conversationId,
             otherUser: convo.otherUser,
             messages: [...convo.messages, message],
-            latestMessageTextL: message.text
+            latestMessageText: message.text,
+            lastViewed
           });
         } else {
           newConversations.push(convo)
@@ -97,28 +97,36 @@ const Home = ({ user, logout }) => {
     },
     [setConversations, conversations],
   );
-
+  
   const addMessageToConversation = useCallback(
     (data) => {
       // if sender isn't null, that means the message needs to be put in a brand new convo
-      const { message, sender = null } = data;
+      const { message, sender = null, senderLastViewed } = data;
       if (sender !== null) {
         const newConvo = {
           id: message.conversationId,
           otherUser: sender,
           messages: [message],
+          unreadMsgCount: 1
         };
+        newConvo.otherUser.lastViewed = senderLastViewed;
         newConvo.latestMessageText = message.text;
         setConversations((prev) => [newConvo, ...prev]);
       }
       const newConversations = [];
       conversations.forEach(convo => {
         if (convo.id === message.conversationId) {
+          let newUnreadCount = convo.unreadMsgCount;
+          if (message.senderId === convo.otherUser.id) {
+            newUnreadCount++;
+          }
           newConversations.push({
+            ...convo,
             id: message.conversationId,
             otherUser: convo.otherUser,
             messages: [...convo.messages, message],
-            latestMessageTextL: message.text
+            latestMessageText: message.text,
+            unreadMsgCount: newUnreadCount
           });
         } else {
           newConversations.push(convo)
@@ -129,33 +137,7 @@ const Home = ({ user, logout }) => {
     [setConversations, conversations],
   );
 
-  const setLastViewedOfConvo = async (username) => {
-    try {
-      const currentConvo = conversations.find(convo => {
-        return convo.otherUser.username === username;
-      });
-      const { data } = await axios.put("api/conversations", {
-        otherUser: currentConvo.otherUser
-      });
-      const newConversations = [];
-      conversations.forEach(convo => {
-        if (convo.id === currentConvo.id) {
-          newConversations.push({
-            ...convo,
-            lastViewed: data.lastViewed,
-            messages: [...convo.messages],
-            otherUser: {...convo.otherUser},
-            unreadMsgCount: 0
-          });
-        } else {
-          newConversations.push(convo);
-        }
-      });
-      setConversations(newConversations);
-    } catch(error) {
-      console.error(error)
-    }
-  }
+
 
   const calculateUnreadMsgCount = (convo) => {
     const { lastViewed, otherUser } = convo;
@@ -174,10 +156,71 @@ const Home = ({ user, logout }) => {
     return unreadMsgCount;
   };
 
+  const setLastViewedOfConvo = async (username) => {
+    try {
+      const currentConvo = conversations.find(convo => {
+        return convo.otherUser.username === username;
+      });
+      const { data } = await axios.put("api/conversations", {
+        otherUser: currentConvo.otherUser
+      });
+      const newConversations = [];
+      conversations.forEach(convo => {
+        if (convo.id === currentConvo.id) {
+          const updatedConvo = {
+            ...convo,
+            lastViewed: data.lastViewed,
+            messages: [...convo.messages],
+            otherUser: {...convo.otherUser},
+            unreadMsgCount: 0
+          };
+          newConversations.push(updatedConvo);
+          socket.emit("viewed-convo", {
+            lastViewed: data.lastViewed,
+            convoId: convo.id,
+            otherUserId: convo.otherUser.id
+          })
+        } else {
+          newConversations.push(convo);
+        }
+      });
+      setConversations(newConversations);
+    } catch(error) {
+      console.error(error)
+    }
+  }
+
   const setActiveChat = (username) => {
     setLastViewedOfConvo(username);
     setActiveConversation(username);
   };
+
+
+  const addLastViewed = useCallback((data) => {
+    try {
+      const convoToUpdate = conversations.find(convo => {
+        return convo.id === data.convoId;
+      });
+      if (!convoToUpdate) {
+        return;
+      }
+      const newConvo = {
+        ...convoToUpdate,
+        otherUser: {...convoToUpdate.otherUser, lastViewed: data.lastViewed}
+      };
+      const newConversations = [];
+      conversations.forEach(convo => {
+        if (convo.id === convoToUpdate.id) {
+          newConversations.push(newConvo);
+        } else {
+          newConversations.push(convo);
+        }
+      });
+      setConversations(newConversations);
+    } catch(error) {
+      console.log(error);
+    }
+  }, [conversations, setConversations]);
 
   const addOnlineUser = useCallback((id) => {
     setConversations((prev) =>
@@ -214,6 +257,7 @@ const Home = ({ user, logout }) => {
     socket.on("add-online-user", addOnlineUser);
     socket.on("remove-offline-user", removeOfflineUser);
     socket.on("new-message", addMessageToConversation);
+    socket.on("viewed-convo", addLastViewed);
 
     return () => {
       // before the component is destroyed
@@ -221,8 +265,10 @@ const Home = ({ user, logout }) => {
       socket.off("add-online-user", addOnlineUser);
       socket.off("remove-offline-user", removeOfflineUser);
       socket.off("new-message", addMessageToConversation);
+      socket.off("viewed-convo", addLastViewed);
+
     };
-  }, [addMessageToConversation, addOnlineUser, removeOfflineUser, socket]);
+  }, [addMessageToConversation, addOnlineUser, removeOfflineUser, socket, addLastViewed]);
 
   useEffect(() => {
     // when fetching, prevent redirect
