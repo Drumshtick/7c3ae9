@@ -22,7 +22,7 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: "10px"
+    marginRight: "12px"
   },
   unreadMsg: {
     fontSize: 12,
