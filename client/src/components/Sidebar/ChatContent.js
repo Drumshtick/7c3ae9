@@ -32,7 +32,7 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-const ChatContent = ({ conversation }) => {
+const ChatContent = ({ conversation, unreadMsgCount }) => {
   const classes = useStyles();
 
   const { otherUser } = conversation;
@@ -50,9 +50,9 @@ const ChatContent = ({ conversation }) => {
       </Box>
       <Box className={classes.unreadMsgContainer}>
         {
-          conversation.unreadMsgCount > 0 && (
+          unreadMsgCount > 0 && (
             <Chip
-              label={conversation.unreadMsgCount}
+              label={unreadMsgCount}
               size="small"
               className={classes.unreadMsg}
             />
