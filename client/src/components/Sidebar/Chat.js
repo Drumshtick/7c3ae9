@@ -33,7 +33,10 @@ const Chat = ({ conversation, setActiveChat }) => {
         online={otherUser.online}
         sidebar={true}
       />
-      <ChatContent conversation={conversation} />
+      <ChatContent
+        conversation={conversation}
+        unreadMsgCount={conversation.unreadMsgCount}
+      />
     </Box>
   );
 };
