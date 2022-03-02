@@ -25,6 +25,7 @@ const Home = ({ user, logout }) => {
   const classes = useStyles();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+
   const addSearchedUsers = (users) => {
     const currentUsers = {};
 
@@ -87,10 +88,15 @@ const Home = ({ user, logout }) => {
             otherUser: convo.otherUser,
             messages: [...convo.messages, message],
             latestMessageText: message.text,
-            lastViewed
+            lastViewed,
+            lastMessageIsRead: false
           });
         } else {
-          newConversations.push(convo)
+          const newConvo = {
+            ...convo,
+            lastMessageIsRead: addReadStatus(convo)
+          };
+          newConversations.push(newConvo)
         }
       });
       setConversations(newConversations);
@@ -105,12 +111,12 @@ const Home = ({ user, logout }) => {
       if (sender !== null) {
         const newConvo = {
           id: message.conversationId,
-          otherUser: sender,
+          otherUser: {...sender, senderLastViewed},
           messages: [message],
-          unreadMsgCount: 1
+          unreadMsgCount: 1,
+          latestMessageText: message.text,
+          latestMessageIsRead: false
         };
-        newConvo.otherUser.lastViewed = senderLastViewed;
-        newConvo.latestMessageText = message.text;
         setConversations((prev) => [newConvo, ...prev]);
       }
       const newConversations = [];
@@ -122,11 +128,10 @@ const Home = ({ user, logout }) => {
           }
           newConversations.push({
             ...convo,
-            id: message.conversationId,
-            otherUser: convo.otherUser,
+            lastMessageIsRead: addReadStatus(convo),
             messages: [...convo.messages, message],
             latestMessageText: message.text,
-            unreadMsgCount: newUnreadCount
+            unreadMsgCount: newUnreadCount,
           });
         } else {
           newConversations.push(convo)
@@ -156,7 +161,18 @@ const Home = ({ user, logout }) => {
     return unreadMsgCount;
   };
 
-  const setLastViewedOfConvo = async (username) => {
+  const addReadStatus = (convo) => {
+    const { messages, otherUser } = convo;
+    const lastMessage = messages[messages.length - 1];
+    if (
+      Date.parse(lastMessage.createdAt) < Date.parse(otherUser.lastViewed)
+      ) {
+        return false;
+      }
+      return true;
+  };
+
+  const addLastViewedOfConvo = async (username) => {
     try {
       const currentConvo = conversations.find(convo => {
         return convo.otherUser.username === username;
@@ -169,11 +185,13 @@ const Home = ({ user, logout }) => {
         if (convo.id === currentConvo.id) {
           const updatedConvo = {
             ...convo,
+            lastMessageIsRead: addReadStatus(convo),
             lastViewed: data.lastViewed,
             messages: [...convo.messages],
             otherUser: {...convo.otherUser},
             unreadMsgCount: 0
           };
+          console.log("updatedConvo1: ", updatedConvo)
           newConversations.push(updatedConvo);
           socket.emit("viewed-convo", {
             lastViewed: data.lastViewed,
@@ -181,6 +199,11 @@ const Home = ({ user, logout }) => {
             otherUserId: convo.otherUser.id
           })
         } else {
+          const newConvo = {
+            ...convo,
+            lastMessageIsRead: addReadStatus(convo)
+          };
+          console.log("updatedConvo2: ", newConvo)
           newConversations.push(convo);
         }
       });
@@ -191,7 +214,7 @@ const Home = ({ user, logout }) => {
   }
 
   const setActiveChat = (username) => {
-    setLastViewedOfConvo(username);
+    addLastViewedOfConvo(username);
     setActiveConversation(username);
   };
 
@@ -206,6 +229,7 @@ const Home = ({ user, logout }) => {
       }
       const newConvo = {
         ...convoToUpdate,
+        lastMessageIsRead: addReadStatus(convoToUpdate),
         otherUser: {...convoToUpdate.otherUser, lastViewed: data.lastViewed}
       };
       const newConversations = [];
@@ -213,7 +237,11 @@ const Home = ({ user, logout }) => {
         if (convo.id === convoToUpdate.id) {
           newConversations.push(newConvo);
         } else {
-          newConversations.push(convo);
+          const newConvo = {
+            ...convo,
+            lastMessageIsRead: addReadStatus(convo)
+          }
+          newConversations.push(newConvo);
         }
       });
       setConversations(newConversations);
@@ -292,6 +320,7 @@ const Home = ({ user, logout }) => {
           convo.messages.sort((a, b) => {
             return Date.parse(a.createdAt) - Date.parse(b.createdAt);
           });
+          convo.lastMessageIsRead = addReadStatus(convo);
         });
         setConversations(data);
       } catch (error) {
