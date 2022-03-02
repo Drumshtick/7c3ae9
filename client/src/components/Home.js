@@ -172,7 +172,7 @@ const Home = ({ user, logout }) => {
       return true;
   };
 
-  const addLastViewedOfConvo = async (username) => {
+  const addLastViewedToConvo = async (username) => {
     try {
       const currentConvo = conversations.find(convo => {
         return convo.otherUser.username === username;
@@ -214,12 +214,12 @@ const Home = ({ user, logout }) => {
   }
 
   const setActiveChat = (username) => {
-    addLastViewedOfConvo(username);
+    addLastViewedToConvo(username);
     setActiveConversation(username);
   };
 
 
-  const addLastViewed = useCallback((data) => {
+  const updateLastViewed = useCallback((data) => {
     try {
       const convoToUpdate = conversations.find(convo => {
         return convo.id === data.convoId;
@@ -285,7 +285,7 @@ const Home = ({ user, logout }) => {
     socket.on("add-online-user", addOnlineUser);
     socket.on("remove-offline-user", removeOfflineUser);
     socket.on("new-message", addMessageToConversation);
-    socket.on("viewed-convo", addLastViewed);
+    socket.on("viewed-convo", updateLastViewed);
 
     return () => {
       // before the component is destroyed
@@ -293,9 +293,9 @@ const Home = ({ user, logout }) => {
       socket.off("add-online-user", addOnlineUser);
       socket.off("remove-offline-user", removeOfflineUser);
       socket.off("new-message", addMessageToConversation);
-      socket.off("viewed-convo", addLastViewed);
+      socket.off("viewed-convo", updateLastViewed);
     };
-  }, [addMessageToConversation, addOnlineUser, removeOfflineUser, socket, addLastViewed]);
+  }, [addMessageToConversation, addOnlineUser, removeOfflineUser, socket, updateLastViewed]);
 
   useEffect(() => {
     // when fetching, prevent redirect
