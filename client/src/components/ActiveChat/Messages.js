@@ -1,11 +1,15 @@
 import React from 'react';
 import { Box } from '@material-ui/core';
-import { SenderBubble, OtherUserBubble } from '.';
+import { SenderBubble, OtherUserBubble, MessageReadBubble } from '.';
 import moment from 'moment';
 
 const Messages = (props) => {
-  const { messages, otherUser, userId } = props;
-
+  const {
+    messages,
+    otherUser,
+    userId,
+    msgReadStatus
+  } = props;
   return (
     <Box>
       {messages.map((message) => {
@@ -22,6 +26,11 @@ const Messages = (props) => {
           />
         );
       })}
+      {
+        msgReadStatus &&
+        messages[messages.length - 1].senderId === userId && (
+          <MessageReadBubble otherUser={otherUser} />
+      )}
     </Box>
   );
 };
