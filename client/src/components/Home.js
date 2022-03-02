@@ -25,7 +25,6 @@ const Home = ({ user, logout }) => {
   const classes = useStyles();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-
   const addSearchedUsers = (users) => {
     const currentUsers = {};
 
@@ -66,6 +65,7 @@ const Home = ({ user, logout }) => {
   const postMessage = async (body) => {
     try {
       const data = await saveMessage(body);
+
       if (!body.conversationId) {
         addNewConvo(body.recipientId, data.message, data.lastViewed);
       } else {
@@ -103,7 +103,7 @@ const Home = ({ user, logout }) => {
     },
     [setConversations, conversations],
   );
-  
+
   const addMessageToConversation = useCallback(
     (data) => {
       // if sender isn't null, that means the message needs to be put in a brand new convo
@@ -294,7 +294,6 @@ const Home = ({ user, logout }) => {
       socket.off("remove-offline-user", removeOfflineUser);
       socket.off("new-message", addMessageToConversation);
       socket.off("viewed-convo", addLastViewed);
-
     };
   }, [addMessageToConversation, addOnlineUser, removeOfflineUser, socket, addLastViewed]);
 
