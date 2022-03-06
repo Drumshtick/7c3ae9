@@ -1,5 +1,5 @@
 from django.db import migrations
-from messenger_backend.models import User, Conversation, Message
+from messenger_backend.models import User, Conversation, Message, ConversationGroup
 
 
 def seed():
@@ -26,8 +26,26 @@ def seed():
 
     santiago.save()
 
-    santiagoConvo = Conversation(user1=thomas, user2=santiago)
+    kevin = User(
+        username="kevin",
+        email="kevin@email.com",
+        password="123456",
+        photoUrl="https://res.cloudinary.com/dmlvthmqr/image/upload/v1607914466/messenger/775db5e79c5294846949f1f55059b53317f51e30_s3back.png",
+    )
+
+    kevin.save()
+
+    santiagoConvo = Conversation()
     santiagoConvo.save()
+
+    santiagoConvoUserSantiago = ConversationGroup(userId=santiago, conversation=santiagoConvo)
+    santiagoConvoUserSantiago.save()
+
+    santiagoConvoUserThomas = ConversationGroup(userId=thomas, conversation=santiagoConvo)
+    santiagoConvoUserThomas.save()
+
+    santiagoConvoUserKevin = ConversationGroup(userId=kevin, conversation=santiagoConvo)
+    santiagoConvoUserKevin.save()
 
     messages = Message(
         conversation=santiagoConvo, senderId=santiago.id, text="Where are you from?"
@@ -36,6 +54,11 @@ def seed():
 
     messages = Message(
         conversation=santiagoConvo, senderId=thomas.id, text="I'm from New York"
+    )
+    messages.save()
+
+    messages = Message(
+        conversation=santiagoConvo, senderId=kevin.id, text="Awesome! When did you move?"
     )
     messages.save()
 
@@ -54,11 +77,30 @@ def seed():
     )
     chiumbo.save()
 
-    chiumboConvo = Conversation(user1=chiumbo, user2=thomas)
+    chiumboConvo = Conversation()
     chiumboConvo.save()
+
+    chiumboConvoUserSantiago = ConversationGroup(userId=chiumbo, conversation=chiumboConvo)
+    chiumboConvoUserSantiago.save()
+
+    chiumboConvoUserThomas = ConversationGroup(userId=thomas, conversation=chiumboConvo)
+    chiumboConvoUserThomas.save()
+
+    chiumboConvoUserKevin = ConversationGroup(userId=kevin, conversation=chiumboConvo)
+    chiumboConvoUserKevin.save()
 
     messages = Message(
         conversation=chiumboConvo, senderId=chiumbo.id, text="Sure! What time?"
+    )
+    messages.save()
+
+    messages = Message(
+        conversation=chiumboConvo, senderId=kevin.id, text="Anytime for me?"
+    )
+    messages.save()
+
+    messages = Message(
+        conversation=chiumboConvo, senderId=thomas.id, text="3:00pm tomorrow would be good for me. "
     )
     messages.save()
 
@@ -70,8 +112,14 @@ def seed():
     )
     hualing.save()
 
-    hualingConvo = Conversation(user1=hualing, user2=thomas)
+    hualingConvo = Conversation()
     hualingConvo.save()
+
+    hualingConvoUserHualing = ConversationGroup(userId=hualing, conversation=hualingConvo)
+    hualingConvoUserHualing.save()
+
+    hualingConvoUserThomas = ConversationGroup(userId=thomas, conversation=hualingConvo)
+    hualingConvoUserThomas.save()
 
     for i in range(10):
         messages = Message(
