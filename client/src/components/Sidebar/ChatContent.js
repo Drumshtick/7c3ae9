@@ -56,9 +56,6 @@ const ChatContent = ({ conversation, unreadMsgCount }) => {
             classes.previewTextBold :
             classes.previewText
             }
-          sx={{
-            fontWeight: unreadMsgCount > 0 ? "900" : "normal"
-          }}
         >
           {latestMessageText}
         </Typography>
