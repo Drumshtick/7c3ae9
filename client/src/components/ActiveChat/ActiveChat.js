@@ -24,7 +24,6 @@ const ActiveChat = ({
   conversations,
   activeConversation,
   postMessage,
-  msgReadStatus
 }) => {
   const classes = useStyles();
 
@@ -53,7 +52,7 @@ const ActiveChat = ({
                   messages={conversation.messages}
                   otherUser={conversation.otherUser}
                   userId={user.id}
-                  msgReadStatus={conversation.lastMessageIsRead}
+                  lastRead={conversation.lastMessageRead}
                 />
                 <Input
                   otherUser={conversation.otherUser}
