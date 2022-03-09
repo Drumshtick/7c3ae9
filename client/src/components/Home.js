@@ -8,6 +8,12 @@ import { SidebarContainer } from "../components/Sidebar";
 import { ActiveChat } from "../components/ActiveChat";
 import { SocketContext } from "../context/socket";
 
+import {
+  calculateUnreadMsgCount,
+  lastReadMsgId,
+  addReadStatusToMessages
+} from "./helpers/homeReadStatusHelpers";
+
 const useStyles = makeStyles((theme) => ({
   root: {
     height: "100vh",
@@ -147,34 +153,6 @@ const Home = ({ user, logout }) => {
   );
 
 
-
-  const calculateUnreadMsgCount = (convo) => {
-    const { lastViewed, otherUser } = convo;
-    if (!lastViewed) {
-      return convo.messages.length;
-    }
-    let unreadMsgCount = 0;
-    convo.messages.forEach(msg => {
-      if (
-        msg.senderId ===  otherUser.id &&
-        Date.parse(msg.createdAt) > Date.parse(lastViewed)
-        ) {
-        unreadMsgCount++;
-      }
-    });
-    return unreadMsgCount;
-  };
-
-  const lastReadMsgId = (messages) => {
-    let id;
-    messages.forEach(message => {
-      if (message.isRead) {
-        id = message.id
-      }
-    });
-    return id ? id : null;
-  };
-
   const addLastViewedToConvo = async (username) => {
     try {
       const currentConvo = conversations.find(convo => {
@@ -254,19 +232,6 @@ const Home = ({ user, logout }) => {
       console.error(error);
     }
   }, [conversations, setConversations]);
-
-  const addReadStatusToMessages = (convo) => {
-    const newMessages = convo.messages.map(message => {
-      if (message.senderId === convo.otherUser.id) {
-        return {...message};
-      }
-      if (Date.parse(message.createdAt) < Date.parse(convo.otherUser.lastViewed)) {
-        return {...message, isRead: true}
-      }
-      return {...message, isRead: false}
-    });
-    return newMessages;
-  }
 
   const addOnlineUser = useCallback((id) => {
     setConversations((prev) =>
