@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Typography, Chip } from "@material-ui/core";
+import { Box, Typography, Badge } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 
 const useStyles = makeStyles((theme) => ({
@@ -30,11 +30,9 @@ const useStyles = makeStyles((theme) => ({
     alignItems: "center",
     marginRight: "12px"
   },
-  unreadMsg: {
-    fontSize: 12,
-    backgroundColor: "#3F92FF",
-    color: "#fff",
-    transform: 'scale(0.7)'
+  unreadMsg : {
+    position: 'relative',
+    right: '1.25em'
   }
 }));
 
@@ -63,9 +61,9 @@ const ChatContent = ({ conversation, unreadMsgCount }) => {
       <Box className={classes.unreadMsgContainer}>
         {
           unreadMsgCount > 0 && (
-            <Chip
-              label={unreadMsgCount}
-              size="small"
+            <Badge
+              color="primary"
+              badgeContent={unreadMsgCount}
               className={classes.unreadMsg}
             />
           )
