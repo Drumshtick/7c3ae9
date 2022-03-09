@@ -21,7 +21,7 @@ const Home = ({ user, logout }) => {
 
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
-  
+
   const classes = useStyles();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -80,22 +80,24 @@ const Home = ({ user, logout }) => {
 
   const addNewConvo = useCallback(
     (recipientId, message, lastViewed) => {
+      message.isRead = false;
       const newConversations = [];
       conversations.forEach(convo => {
         if (convo.otherUser.id === recipientId) {
-          newConversations.push({
+          const newConvo = {
             id: message.conversationId,
             otherUser: convo.otherUser,
             messages: [...convo.messages, message],
             latestMessageText: message.text,
             lastViewed,
-            lastMessageIsRead: false
-          });
+            lastMessageRead : lastReadMsgId([...convo.messages, message])
+          }
+          newConvo.messages = addReadStatusToMessages(newConvo);
+          newConversations.push(newConvo);
         } else {
-          const newConvo = {
-            ...convo,
-            lastMessageIsRead: readStatus(convo)
-          };
+          const newConvo = {...convo};
+          newConvo.messages = addReadStatusToMessages(convo);
+          newConvo.lastMessageRead = lastReadMsgId(convo.messages);
           newConversations.push(newConvo)
         }
       });
@@ -126,14 +128,15 @@ const Home = ({ user, logout }) => {
           if (message.senderId === convo.otherUser.id) {
             newUnreadCount++;
           }
-          const lastMessageIsRead = readStatus({...convo, messages: [...convo.messages, message]});
-          newConversations.push({
+          const updatedConvo = {
             ...convo,
-            lastMessageIsRead,
             messages: [...convo.messages, message],
             latestMessageText: message.text,
             unreadMsgCount: newUnreadCount,
-          });
+          };
+          updatedConvo.messages = addReadStatusToMessages(updatedConvo);
+          updatedConvo.lastMessageRead = lastReadMsgId(updatedConvo.messages);
+          newConversations.push(updatedConvo)
         } else {
           newConversations.push(convo)
         }
@@ -162,16 +165,14 @@ const Home = ({ user, logout }) => {
     return unreadMsgCount;
   };
 
-  const readStatus = (convo) => {
-    const { messages, otherUser } = convo;
-    const lastMessage = messages[messages.length - 1];
-
-    if (
-      Date.parse(lastMessage.createdAt) < Date.parse(otherUser.lastViewed)
-      ) {
-        return true;
+  const lastReadMsgId = (messages) => {
+    let id;
+    messages.forEach(message => {
+      if (message.isRead) {
+        id = message.id
       }
-      return false;
+    });
+    return id ? id : null;
   };
 
   const addLastViewedToConvo = async (username) => {
@@ -190,9 +191,9 @@ const Home = ({ user, logout }) => {
             lastViewed: data.lastViewed,
             messages: [...convo.messages],
             otherUser: {...convo.otherUser},
-            unreadMsgCount: 0
+            unreadMsgCount: 0,
+            lastMessageRead : lastReadMsgId(convo.messages)
           };
-          updatedConvo.lastMessageIsRead = readStatus(updatedConvo);
           newConversations.push(updatedConvo);
           socket.emit("viewed-convo", {
             lastViewed: data.lastViewed,
@@ -202,7 +203,7 @@ const Home = ({ user, logout }) => {
         } else {
           const newConvo = {
             ...convo,
-            lastMessageIsRead: readStatus(convo)
+            lastMessageRead : lastReadMsgId(convo.messages)
           };
           newConversations.push(newConvo);
         }
@@ -227,11 +228,13 @@ const Home = ({ user, logout }) => {
       if (!convoToUpdate) {
         return;
       }
+      const newMessages = addReadStatusToMessages({...convoToUpdate, otherUser: {...convoToUpdate.otherUser, lastViewed: data.lastViewed}});
       const newConvo = {
         ...convoToUpdate,
+        messages: newMessages,
+        lastMessageRead : lastReadMsgId(newMessages),
         otherUser: {...convoToUpdate.otherUser, lastViewed: data.lastViewed}
       };
-      newConvo.lastMessageIsRead = readStatus(newConvo)
       const newConversations = [];
       conversations.forEach(convo => {
         if (convo.id === convoToUpdate.id) {
@@ -239,8 +242,10 @@ const Home = ({ user, logout }) => {
         } else {
           const newConvo = {
             ...convo,
-            lastMessageIsRead: readStatus(convo)
           }
+          const newMessages = addReadStatusToMessages(newConvo);
+          newConvo.messages = newMessages;
+          newConvo.lastMessageRead = lastReadMsgId(newMessages)
           newConversations.push(newConvo);
         }
       });
@@ -249,6 +254,19 @@ const Home = ({ user, logout }) => {
       console.error(error);
     }
   }, [conversations, setConversations]);
+
+  const addReadStatusToMessages = (convo) => {
+    const newMessages = convo.messages.map(message => {
+      if (message.senderId === convo.otherUser.id) {
+        return {...message};
+      }
+      if (Date.parse(message.createdAt) < Date.parse(convo.otherUser.lastViewed)) {
+        return {...message, isRead: true}
+      }
+      return {...message, isRead: false}
+    });
+    return newMessages;
+  }
 
   const addOnlineUser = useCallback((id) => {
     setConversations((prev) =>
@@ -319,7 +337,8 @@ const Home = ({ user, logout }) => {
           convo.messages.sort((a, b) => {
             return Date.parse(a.createdAt) - Date.parse(b.createdAt);
           });
-          convo.lastMessageIsRead = readStatus(convo);
+          convo.messages = addReadStatusToMessages(convo);
+          convo.lastMessageRead = lastReadMsgId(convo.messages);
         });
         setConversations(data);
       } catch (error) {
@@ -336,7 +355,7 @@ const Home = ({ user, logout }) => {
       await logout(user.id);
     }
   };
-
+  
   return (
     <>
       <Button onClick={handleLogout}>Logout</Button>
