@@ -87,6 +87,10 @@ class Conversations(APIView):
         conversation = (
           Conversation.find_conversation(body["otherUser"]["id"], user_id)
         )
+
+        if conversation == None:
+          return HttpResponse(status=401)
+
         if conversation.user1.id == user_id:
           lastViewed = timezone.now()
           conversation.user1LastViewed = lastViewed
