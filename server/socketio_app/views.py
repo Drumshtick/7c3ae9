@@ -38,13 +38,11 @@ def logout(sid, user_id):
     sio.emit("remove-offline-user", user_id, skip_sid=sid)
 
 @sio.on("viewed-convo")
-def updateLastViewed(sid, convo_data):
+def update_last_viewed(sid, convo_data):
   sio.emit("viewed-convo", convo_data, skip_sid=sid)
 
 @sio.on("active-convo")
-def updateCurrentConvo(sid, user_data):
-  print(user_data)
-  print(online_users)
+def update_active_convo(sid, user_data):
   sio.emit("active-convo", user_data, skip_sid=sid)
 
 @sio.on("disconnect")
