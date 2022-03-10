@@ -29,7 +29,6 @@ const Home = ({ user, logout }) => {
   const [activeConversation, setActiveConversation] = useState(null);
   const [convoHistory, setConvoHistory] = useState([null]);
 
-  console.log(conversations)
   const classes = useStyles();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -128,8 +127,9 @@ const Home = ({ user, logout }) => {
       const { message, sender = null, senderLastViewed } = data;
       if (sender !== null) {
         const newConvo = {
+          lastViewed: null,
           id: message.conversationId,
-          otherUser: {...sender, senderLastViewed},
+          otherUser: {...sender, lastViewed: senderLastViewed},
           messages: [message],
           unreadMsgCount: 1,
           latestMessageText: message.text,
@@ -137,32 +137,32 @@ const Home = ({ user, logout }) => {
         };
         setConversations((prev) => [newConvo, ...prev]);
       }
-      const newConversations = conversations.map(convo => {
-        if (convo.id === message.conversationId) {
-          let newUnreadCount = convo.unreadMsgCount;
-          if (message.senderId === convo.otherUser.id) {
-            newUnreadCount++;
+        const newConversations = conversations.map(convo => {
+          if (convo.id === message.conversationId) {
+            let newUnreadCount = convo.unreadMsgCount;
+            if (message.senderId === convo.otherUser.id) {
+              newUnreadCount++;
+            }
+            if (activeConversation === convo.otherUser.username) {
+              newUnreadCount = 0;
+              axios.put("api/conversations", {
+                otherUser: convo.otherUser
+              });
+            }
+            const updatedConvo = {
+              ...convo,
+              messages: [...convo.messages, message],
+              latestMessageText: message.text,
+              unreadMsgCount: newUnreadCount,
+            };
+            updatedConvo.messages = addReadStatusToMessages(updatedConvo, activeConversation);
+            updatedConvo.lastMessageRead = lastReadMsgId(updatedConvo.messages);
+            return updatedConvo;
+          } else {
+            return convo;
           }
-          if (activeConversation === convo.otherUser.username) {
-            newUnreadCount = 0;
-            axios.put("api/conversations", {
-              otherUser: convo.otherUser
-            });
-          }
-          const updatedConvo = {
-            ...convo,
-            messages: [...convo.messages, message],
-            latestMessageText: message.text,
-            unreadMsgCount: newUnreadCount,
-          };
-          updatedConvo.messages = addReadStatusToMessages(updatedConvo, activeConversation);
-          updatedConvo.lastMessageRead = lastReadMsgId(updatedConvo.messages);
-          return updatedConvo;
-        } else {
-          return convo;
-        }
-      });
-      setConversations(newConversations);
+        });
+        setConversations(newConversations);
     },
     [setConversations, conversations, activeConversation],
   );
@@ -262,11 +262,11 @@ const Home = ({ user, logout }) => {
             userId: user.id,
             convoId: history[history.length - 1]
           });
-          const { otherUser } = conversations.find(convo => {
+          const convo = conversations.find(convo => {
             return convo.id === history[0];
           });
-          axios.put("api/conversations", {
-            otherUser: otherUser
+          if (convo.messages.length > 1) axios.put("api/conversations", {
+            otherUser: convo.otherUser
           });
           return history
         });
