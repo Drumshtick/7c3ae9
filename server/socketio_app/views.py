@@ -18,7 +18,7 @@ def connect(sid, environ):
 @sio.on("go-online")
 def go_online(sid, user_id):
     if user_id not in online_users:
-        online_users.append(user_id)
+        online_users[sid] =  user_id
     sio.emit("add-online-user", user_id, skip_sid=sid)
 
 
@@ -33,6 +33,20 @@ def new_message(sid, message):
 
 @sio.on("logout")
 def logout(sid, user_id):
-    if user_id in online_users:
-        online_users.remove(user_id)
+    if sid in online_users:
+        del online_users[sid]
     sio.emit("remove-offline-user", user_id, skip_sid=sid)
+
+@sio.on("viewed-convo")
+def update_last_viewed(sid, convo_data):
+  sio.emit("viewed-convo", convo_data, skip_sid=sid)
+
+@sio.on("active-convo")
+def update_active_convo(sid, user_data):
+  sio.emit("active-convo", user_data, skip_sid=sid)
+
+@sio.on("disconnect")
+def disconnection(sid):
+  if sid in online_users:
+    sio.emit("active-convo", {"userId": online_users[sid], "convoId": None}, skip_sid=sid)
+    del online_users[sid]

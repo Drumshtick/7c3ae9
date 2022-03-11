@@ -3,7 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from messenger_backend.models import Conversation, Message
 from online_users import online_users
 from rest_framework.views import APIView
-
+from django.utils import timezone
 
 class Messages(APIView):
     """expects {recipientId, text, conversationId } in body (conversationId will be null if no conversation exists yet)"""
@@ -30,7 +30,20 @@ class Messages(APIView):
                 )
                 message.save()
                 message_json = message.to_dict()
-                return JsonResponse({"message": message_json, "sender": body["sender"]})
+                if conversation.user1.id == user.id:
+                  lastViewed = timezone.now()
+                  conversation.user1LastViewed = lastViewed
+                  conversation.save(update_fields=["user1LastViewed"])
+                else :
+                  lastViewed = timezone.now()
+                  conversation.user2LastViewed = lastViewed
+                  conversation.save(update_fields=["user2LastViewed"])
+
+                return JsonResponse({
+                  "message": message_json,
+                  "sender": body["sender"],
+                  "senderLastViewed": lastViewed
+                  })
 
             # if we don't have conversation id, find a conversation to m       ake sure it doesn't already exist
             conversation = Conversation.find_conversation(sender_id, recipient_id)
