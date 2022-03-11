@@ -248,30 +248,6 @@ const Home = ({ user, logout }) => {
   }, []);
 
     
-    useEffect(() => {
-      // If stack shows a change between active conversations update active-convo with socket
-      if (
-        convoHistory.length > 1 &&
-        convoHistory[convoHistory.length - 1] !==
-        convoHistory[convoHistory.length - 2]
-        ) {
-        setConvoHistory(prev => {
-          const history = [...prev];
-          history.shift();
-          socket.emit("active-convo", {
-            userId: user.id,
-            convoId: history[history.length - 1]
-          });
-          const convo = conversations.find(convo => {
-            return convo.id === history[0];
-          });
-          if (convo.messages.length > 1) axios.put("api/conversations", {
-            otherUser: convo.otherUser
-          });
-          return history
-        });
-      }    
-  }, [ convoHistory, user, socket, conversations ])
 
   const updateActiveConversation = useCallback(userData => {
     if (!userData.convoId) {
@@ -325,10 +301,9 @@ const Home = ({ user, logout }) => {
       lastMessageRead : lastReadMsgId(newMessages),
       otherUser: {...convoToUpdate.otherUser, lastViewed: data.lastViewed}
     };
-    const newConversations = [];
-    conversations.forEach(convo => {
+    const newConversations = conversations.map(convo => {
       if (convo.id === convoToUpdate.id) {
-        newConversations.push(newConvo);
+        return newConvo;
       } else {
         const newConvo = {
           ...convo,
@@ -336,11 +311,47 @@ const Home = ({ user, logout }) => {
         const newMessages = addReadStatusToMessages(newConvo);
         newConvo.messages = newMessages;
         newConvo.lastMessageRead = lastReadMsgId(newMessages)
-        newConversations.push(newConvo);
+        return newConvo;
       }
     });
     setConversations(newConversations);
   }, [conversations, setConversations]);
+
+  useEffect(() => {
+    // If stack shows a change between active conversations update active-convo with socket
+  if (
+    convoHistory.length > 1 &&
+    convoHistory[convoHistory.length - 1] !==
+    convoHistory[convoHistory.length - 2]
+    ) {
+      setConvoHistory(prev => {
+        const history = [...prev];
+        history.shift();
+        return history
+      });
+    socket.emit("active-convo", {
+      userId: user.id,
+      convoId: convoHistory[convoHistory.length - 1]
+    });
+    const convo = conversations.find(convo => {
+      return convo.id === convoHistory[0];
+    });
+    if (!convo) {
+      return;
+    }
+    if (convo.messages.length > 1) {
+      axios.put("api/conversations", {
+        otherUser: convo.otherUser
+      }).then(response => {
+        updateLastViewed(response.data);
+      }).catch(error => {
+        console.error(error)
+      });
+    }
+
+  }    
+}, [convoHistory, socket, user.id, conversations, updateLastViewed])
+
   // Lifecycle
 
   useEffect(() => {
