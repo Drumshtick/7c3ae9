@@ -30,13 +30,12 @@ export const lastReadMsgId = (messages) => {
    * messages : array of messages
    * returns : id of message or null if none found
    */
-  let id;
-  messages.forEach(message => {
-    if (message.isRead) {
-      id = message.id
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].isRead) {
+      return messages[i].id;
     }
-  });
-  return id ? id : null;
+  }
+  return null;
 };
 
 export const addReadStatusToMessages = (convo, activeChat) => {
